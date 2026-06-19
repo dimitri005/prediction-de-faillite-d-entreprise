@@ -1,0 +1,328 @@
+/* ================================
+   GLOBAL
+================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    color: #eee;
+}
+
+/* ================================
+   HEADER
+================================ */
+header {
+    background: linear-gradient(90deg, #e74c3c, #f39c12, #3498db);
+    padding: 30px 20px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+header h1 { font-size: 2rem; color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.5); }
+header p  { color: rgba(255,255,255,0.85); margin-top: 8px; font-size: 1rem; }
+
+/* ================================
+   CONTAINER & CARDS
+================================ */
+.container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+
+.card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 30px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.card h2 { font-size: 1.4rem; margin-bottom: 8px; color: #f39c12; }
+.subtitle { color: #aaa; margin-bottom: 20px; font-size: 0.9rem; }
+
+/* ================================
+   IDENTITÉ ENTREPRISE (nom + logo)
+================================ */
+.company-identity {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+.company-logo-upload {
+    width: 110px;
+    height: 110px;
+    flex-shrink: 0;
+    border: 2px dashed rgba(243,156,18,0.5);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: rgba(255,255,255,0.05);
+    transition: border-color 0.2s, background 0.2s;
+    overflow: hidden;
+}
+.company-logo-upload:hover {
+    border-color: #f39c12;
+    background: rgba(255,255,255,0.08);
+}
+.logo-placeholder {
+    text-align: center;
+    color: #aaa;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+.company-logo-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8px;
+}
+.company-identity-fields {
+    flex: 1;
+    min-width: 220px;
+}
+.company-identity-fields label {
+    display: block;
+    font-size: 0.78rem;
+    color: #a0c4ff;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.company-identity-fields input {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 1.05rem;
+    font-weight: bold;
+    transition: border-color 0.3s;
+}
+.company-identity-fields input:focus {
+    outline: none;
+    border-color: #f39c12;
+    background: rgba(255,255,255,0.12);
+}
+.btn-link {
+    margin-top: 10px;
+    background: none;
+    border: none;
+    color: #e74c3c;
+    font-size: 0.82rem;
+    cursor: pointer;
+    padding: 0;
+}
+.btn-link:hover { text-decoration: underline; }
+
+/* ================================
+   EN-TÊTE ENTREPRISE DANS LE RAPPORT
+================================ */
+.report-company-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding-bottom: 18px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+.report-logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    padding: 6px;
+}
+.report-company-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.report-company-name {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #fff;
+}
+.report-date {
+    font-size: 0.8rem;
+    color: #aaa;
+}
+
+/* ================================
+   FORMULAIRE
+================================ */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.form-group label {
+    display: block;
+    font-size: 0.78rem;
+    color: #a0c4ff;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.form-group input {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.95rem;
+    transition: border-color 0.3s;
+}
+.form-group input:focus {
+    outline: none;
+    border-color: #f39c12;
+    background: rgba(255,255,255,0.12);
+}
+
+.btn-predict {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(90deg, #e74c3c, #f39c12);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-predict:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(231,76,60,0.4);
+}
+.btn-predict:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* ================================
+   RISK BANNER
+================================ */
+.risk-banner {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 24px;
+    border-radius: 12px;
+    border: 2px solid;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.risk-label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 6px; }
+.risk-value  { font-size: 2.5rem; font-weight: bold; }
+.risk-niveau { font-size: 1.8rem; font-weight: bold; }
+.risk-verdict-text { font-size: 1.2rem; font-weight: bold; color: #eee; }
+
+/* ================================
+   JAUGE
+================================ */
+.gauge-container { margin-bottom: 28px; }
+.gauge-label { font-size: 0.9rem; color: #aaa; margin-bottom: 8px; }
+.gauge-bar {
+    height: 24px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.gauge-fill {
+    height: 100%;
+    border-radius: 12px;
+    transition: width 1s ease;
+    width: 0%;
+}
+.gauge-percent {
+    text-align: right;
+    font-size: 1rem;
+    font-weight: bold;
+    margin-top: 6px;
+    color: #f39c12;
+}
+
+/* ================================
+   SHAP
+================================ */
+.shap-section { margin-bottom: 28px; }
+.shap-section h3 { color: #a0c4ff; margin-bottom: 14px; }
+.shap-img { width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
+
+/* ================================
+   TABLEAU
+================================ */
+.top-features h3 { color: #a0c4ff; margin-bottom: 14px; }
+table { width: 100%; border-collapse: collapse; }
+th {
+    background: rgba(255,255,255,0.1);
+    padding: 12px;
+    text-align: left;
+    font-size: 0.85rem;
+    color: #f39c12;
+    text-transform: uppercase;
+}
+td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 0.88rem;
+}
+tr:hover td { background: rgba(255,255,255,0.04); }
+
+/* ================================
+   CARD HEADER ROW (titre + bouton action)
+================================ */
+.card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.card-header-row h2 { margin-bottom: 0; }
+
+/* ================================
+   BOUTON SECONDAIRE
+================================ */
+.btn-secondary {
+    padding: 10px 18px;
+    background: transparent;
+    border: 1.5px solid #3498db;
+    border-radius: 8px;
+    color: #a0c4ff;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    white-space: nowrap;
+}
+.btn-secondary:hover {
+    background: rgba(52,152,219,0.15);
+    transform: translateY(-1px);
+}
+.btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* ================================
+   RESPONSIVE
+================================ */
+@media (max-width: 600px) {
+    .card-header-row { flex-direction: column; align-items: stretch; }
+    .card-header-row .btn-secondary { width: 100%; }
+    .company-identity { flex-direction: column; align-items: stretch; text-align: center; }
+    .company-logo-upload { margin: 0 auto; }
+}
+
+/* ================================
+   FOOTER
+================================ */
+footer {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255,255,255,0.4);
+    font-size: 0.85rem;
+}

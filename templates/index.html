@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prédiction de Faillite d'Entreprise</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="header-content">
+        <h1>🏦 Prédiction de Faillite d'Entreprise</h1>
+        <p>projet de stage réalisé par staelle</p>
+    </div>
+</header>
+
+<!-- MAIN -->
+<div class="container">
+
+    <!-- IDENTITÉ DE L'ENTREPRISE -->
+    <div class="card company-card">
+        <h2>🏢 Entreprise à Analyser</h2>
+        <p class="subtitle">Renseignez le nom et, si vous le souhaitez, le logo de l'entreprise (ces informations apparaîtront dans le rapport)</p>
+
+        <div class="company-identity">
+            <div class="company-logo-upload" id="logoDropZone">
+                <img id="companyLogoPreview" class="company-logo-preview" src="" alt="Logo" style="display:none;">
+                <span id="logoPlaceholder" class="logo-placeholder">📷<br>Logo</span>
+                <input type="file" id="companyLogoInput" accept="image/*" hidden>
+            </div>
+            <div class="company-identity-fields">
+                <label for="companyNameInput">Nom de l'entreprise</label>
+                <input type="text" id="companyNameInput" placeholder="Ex : Société Générale du Cameroun" maxlength="80">
+                <button type="button" id="removeLogoBtn" class="btn-link" style="display:none;">✖ Retirer le logo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORMULAIRE -->
+    <div class="card form-card">
+        <h2>📊 Ratios Financiers</h2>
+        <p class="subtitle">Entrez les ratios financiers de l'entreprise à analyser</p>
+        <form id="predictionForm">
+            <div class="form-grid">
+                {% for feat in feature_names %}
+                <div class="form-group">
+                    <label for="{{ feat }}">{{ feat.replace('_', ' ').title() }}</label>
+                    <input type="number" step="any" id="{{ feat }}"
+                           name="{{ feat }}" placeholder="0.00" required>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn-predict">
+                🔍 Analyser l'Entreprise
+            </button>
+        </form>
+    </div>
+
+    <!-- RÉSULTATS -->
+    <div class="card result-card" id="resultCard" style="display:none;">
+        <div class="card-header-row">
+            <h2>📈 Résultats de l'Analyse</h2>
+            <button type="button" class="btn-secondary pdf-hide" id="downloadPdfBtn">📄 Télécharger le PDF</button>
+        </div>
+
+        <!-- En-tête entreprise dans le rapport -->
+        <div class="report-company-header" id="reportCompanyHeader">
+            <img id="reportLogo" class="report-logo" src="" alt="Logo" style="display:none;">
+            <div class="report-company-info">
+                <span class="report-company-name" id="reportCompanyName">Entreprise non renseignée</span>
+                <span class="report-date" id="reportDate"></span>
+            </div>
+        </div>
+
+        <!-- Score de risque -->
+        <div class="risk-banner" id="riskBanner">
+            <div class="risk-score">
+                <span class="risk-label">Score de Risque</span>
+                <span class="risk-value" id="riskValue">--</span>
+            </div>
+            <div class="risk-level">
+                <span class="risk-label">Niveau de Risque</span>
+                <span class="risk-niveau" id="riskNiveau">--</span>
+            </div>
+            <div class="risk-verdict">
+                <span class="risk-label">Verdict</span>
+                <span class="risk-verdict-text" id="riskVerdict">--</span>
+            </div>
+        </div>
+
+        <!-- Jauge de probabilité -->
+        <div class="gauge-container">
+            <div class="gauge-label">Probabilité de Faillite</div>
+            <div class="gauge-bar">
+                <div class="gauge-fill" id="gaugeFill"></div>
+            </div>
+            <div class="gauge-percent" id="gaugePercent">0%</div>
+        </div>
+
+        <!-- Graphique SHAP -->
+        <div class="shap-section">
+            <h3>🧠 Explication SHAP — Variables décisives</h3>
+            <img id="shapChart" src="" alt="Graphique SHAP" class="shap-img">
+        </div>
+
+        <!-- Top features tableau -->
+        <div class="top-features">
+            <h3>📋 Top 10 Variables Influentes</h3>
+            <table id="featuresTable">
+                <thead>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Impact SHAP</th>
+                        <th>Direction</th>
+                    </tr>
+                </thead>
+                <tbody id="featuresBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <p>Projet de stage realiser par staelle</p>
+</footer>
+
+<!-- Librairies pour l'export PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+/* ============================================================
+   IDENTITÉ ENTREPRISE (nom + logo)
+============================================================ */
+const companyNameInput   = document.getElementById('companyNameInput');
+const companyLogoInput   = document.getElementById('companyLogoInput');
+const companyLogoPreview = document.getElementById('companyLogoPreview');
+const logoPlaceholder    = document.getElementById('logoPlaceholder');
+const logoDropZone       = document.getElementById('logoDropZone');
+const removeLogoBtn      = document.getElementById('removeLogoBtn');
+
+let companyLogoDataUrl = '';
+
+logoDropZone.addEventListener('click', () => companyLogoInput.click());
+
+companyLogoInput.addEventListener('change', () => {
+    const file = companyLogoInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        companyLogoDataUrl = e.target.result;
+        companyLogoPreview.src = companyLogoDataUrl;
+        companyLogoPreview.style.display = 'block';
+        logoPlaceholder.style.display = 'none';
+        removeLogoBtn.style.display = 'inline-block';
+    };
+    reader.readAsDataURL(file);
+});
+
+removeLogoBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    companyLogoDataUrl = '';
+    companyLogoInput.value = '';
+    companyLogoPreview.src = '';
+    companyLogoPreview.style.display = 'none';
+    logoPlaceholder.style.display = 'block';
+    removeLogoBtn.style.display = 'none';
+});
+
+/* ============================================================
+   PRÉDICTION
+============================================================ */
+document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const btn = document.querySelector('.btn-predict');
+    btn.textContent = '⏳ Analyse en cours...';
+    btn.disabled = true;
+
+    const formData = new FormData(this);
+
+    try {
+        const response = await fetch('/predict', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+
+        if (data.error) {
+            alert('Erreur : ' + data.error);
+            return;
+        }
+
+        // Afficher les résultats
+        document.getElementById('resultCard').style.display = 'block';
+
+        // En-tête entreprise du rapport
+        const companyName = companyNameInput.value.trim() || 'Entreprise non renseignée';
+        document.getElementById('reportCompanyName').textContent = companyName;
+        document.getElementById('reportDate').textContent = new Date().toLocaleString('fr-FR');
+
+        const reportLogo = document.getElementById('reportLogo');
+        if (companyLogoDataUrl) {
+            reportLogo.src = companyLogoDataUrl;
+            reportLogo.style.display = 'block';
+        } else {
+            reportLogo.style.display = 'none';
+        }
+
+        // Banner de risque
+        const banner = document.getElementById('riskBanner');
+        banner.style.backgroundColor = data.couleur_risque + '22';
+        banner.style.borderColor = data.couleur_risque;
+
+        document.getElementById('riskValue').textContent = data.probabilite + '%';
+        document.getElementById('riskValue').style.color = data.couleur_risque;
+        document.getElementById('riskNiveau').textContent = data.niveau_risque;
+        document.getElementById('riskNiveau').style.color = data.couleur_risque;
+        document.getElementById('riskVerdict').textContent = data.verdict;
+
+        // Jauge
+        const gauge = document.getElementById('gaugeFill');
+        gauge.style.width = data.probabilite + '%';
+        gauge.style.backgroundColor = data.couleur_risque;
+        document.getElementById('gaugePercent').textContent = data.probabilite + '%';
+
+        // Graphique SHAP
+        document.getElementById('shapChart').src = 'data:image/png;base64,' + data.shap_chart;
+
+        // Tableau features
+        const tbody = document.getElementById('featuresBody');
+        tbody.innerHTML = '';
+        data.top_features.forEach(f => {
+            const direction = f.shap > 0 ? '🔴 Faillite' : '🔵 Saine';
+            const color     = f.shap > 0 ? '#e74c3c'    : '#3498db';
+            tbody.innerHTML += `
+                <tr>
+                    <td>${f.name.replace(/_/g, ' ')}</td>
+                    <td style="color:${color}; font-weight:bold;">${f.shap}</td>
+                    <td>${direction}</td>
+                </tr>`;
+        });
+
+        // Scroll vers résultats
+        document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+
+    } catch(err) {
+        alert('Erreur de connexion : ' + err);
+    } finally {
+        btn.textContent = '🔍 Analyser l\'Entreprise';
+        btn.disabled = false;
+    }
+});
+
+/* ============================================================
+   EXPORT PDF
+============================================================ */
+async function downloadAsPdf(elementId, filename) {
+    const element = document.getElementById(elementId);
+    const hiddenButtons = element.querySelectorAll('.pdf-hide');
+    hiddenButtons.forEach(b => b.style.visibility = 'hidden');
+
+    try {
+        const canvas = await html2canvas(element, {
+            backgroundColor: '#16213e',
+            scale: 2,
+            useCORS: true
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+
+        const pageWidth  = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth   = pageWidth;
+        const imgHeight  = (canvas.height * imgWidth) / canvas.width;
+
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+
+        pdf.save(filename);
+    } catch (err) {
+        alert('Erreur lors de la génération du PDF : ' + err);
+    } finally {
+        hiddenButtons.forEach(b => b.style.visibility = 'visible');
+    }
+}
+
+document.getElementById('downloadPdfBtn').addEventListener('click', () => {
+    const companyName = companyNameInput.value.trim() || 'entreprise';
+    const safeName = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    downloadAsPdf('resultCard', `rapport_faillite_${safeName}.pdf`);
+});
+</script>
+
+</body>
+</html>
