@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.git
+.gitignore
+*.ipynb
+training_data.csv
+test_data.csv
+Documentation_Faillite_Entreprise.pdf
+README.md
+staelle_virtual/
