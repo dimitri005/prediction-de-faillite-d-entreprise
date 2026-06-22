@@ -40,8 +40,19 @@
 
     <!-- FORMULAIRE -->
     <div class="card form-card">
-        <h2>📊 Ratios Financiers</h2>
-        <p class="subtitle">Entrez les ratios financiers de l'entreprise à analyser</p>
+        <div class="card-header-row">
+            <div>
+                <h2>📊 Ratios Financiers</h2>
+                <p class="subtitle">Entrez les ratios financiers de l'entreprise à analyser, ou importez-les depuis un fichier</p>
+            </div>
+            <div class="import-actions">
+                <button type="button" class="btn-secondary" id="importFileBtn">📁 Importer un fichier</button>
+                <input type="file" id="importFileInput" accept=".csv,.xlsx,.xls" hidden>
+            </div>
+        </div>
+
+        <div id="importStatus" class="import-status"></div>
+
         <form id="predictionForm">
             <div class="form-grid">
                 {% for feat in feature_names %}
@@ -131,8 +142,119 @@
 <!-- Librairies pour l'export PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
+/* ============================================================
+   IMPORT FICHIER (CSV / Excel) → remplissage auto du formulaire
+============================================================ */
+const importFileBtn   = document.getElementById('importFileBtn');
+const importFileInput = document.getElementById('importFileInput');
+const importStatus    = document.getElementById('importStatus');
+
+// Liste des noms de champs réels du formulaire (générés par Jinja2)
+const formFieldIds = Array.from(document.querySelectorAll('#predictionForm input[type="number"]'))
+    .map(input => input.id);
+
+function normalize(str) {
+    return String(str)
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // enlève les accents
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+// Pré-calcule une version normalisée de chaque id de champ pour le matching
+const normalizedFieldMap = {};
+formFieldIds.forEach(id => { normalizedFieldMap[normalize(id)] = id; });
+
+function showImportStatus(message, type) {
+    importStatus.textContent = message;
+    importStatus.className = 'import-status import-status-' + type + ' show';
+    if (type === 'success') {
+        setTimeout(() => importStatus.classList.remove('show'), 4000);
+    }
+}
+
+function applyValuesToForm(pairs) {
+    let filled = 0;
+    const missing = [];
+
+    pairs.forEach(({ key, value }) => {
+        const normalizedKey = normalize(key);
+        const fieldId = normalizedFieldMap[normalizedKey];
+        if (fieldId && value !== '' && value !== null && !isNaN(parseFloat(value))) {
+            const input = document.getElementById(fieldId);
+            input.value = parseFloat(value);
+            // petit effet visuel pour montrer le champ rempli
+            input.classList.add('field-filled');
+            setTimeout(() => input.classList.remove('field-filled'), 1200);
+            filled++;
+        } else if (fieldId) {
+            missing.push(key);
+        }
+    });
+
+    if (filled === 0) {
+        showImportStatus('⚠️ Aucune correspondance trouvée avec les champs attendus. Vérifiez les noms de colonnes.', 'error');
+    } else {
+        showImportStatus(`✅ ${filled} champ(s) rempli(s) automatiquement à partir du fichier.`, 'success');
+    }
+}
+
+function parseWorkbookData(workbook) {
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: '' });
+
+    if (rows.length === 0) {
+        showImportStatus('⚠️ Le fichier semble vide.', 'error');
+        return;
+    }
+
+    const pairs = [];
+
+    if (rows.length >= 2 && rows[0].length > 1) {
+        // Format "ligne d'en-têtes + ligne de valeurs" (ex: export Excel classique)
+        const headers = rows[0];
+        const values  = rows[1];
+        headers.forEach((h, i) => {
+            if (h !== '') pairs.push({ key: h, value: values[i] });
+        });
+    } else {
+        // Format "deux colonnes : nom_variable, valeur" (une ligne par ratio)
+        rows.forEach(row => {
+            if (row.length >= 2 && row[0] !== '') {
+                pairs.push({ key: row[0], value: row[1] });
+            }
+        });
+    }
+
+    applyValuesToForm(pairs);
+}
+
+importFileBtn.addEventListener('click', () => importFileInput.click());
+
+importFileInput.addEventListener('change', () => {
+    const file = importFileInput.files[0];
+    if (!file) return;
+
+    showImportStatus('⏳ Lecture du fichier en cours...', 'loading');
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            parseWorkbookData(workbook);
+        } catch (err) {
+            showImportStatus('❌ Impossible de lire ce fichier : ' + err.message, 'error');
+        } finally {
+            importFileInput.value = '';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+});
+
 /* ============================================================
    IDENTITÉ ENTREPRISE (nom + logo)
 ============================================================ */
@@ -195,8 +317,13 @@ document.getElementById('predictionForm').addEventListener('submit', async funct
             return;
         }
 
-        // Afficher les résultats
-        document.getElementById('resultCard').style.display = 'block';
+        // Afficher les résultats avec effet d'apparition
+        const resultCard = document.getElementById('resultCard');
+        resultCard.style.display = 'block';
+        resultCard.classList.remove('fade-in-up');
+        // force le reflow pour pouvoir rejouer l'animation à chaque analyse
+        void resultCard.offsetWidth;
+        resultCard.classList.add('fade-in-up');
 
         // En-tête entreprise du rapport
         const companyName = companyNameInput.value.trim() || 'Entreprise non renseignée';
