@@ -133,6 +133,4 @@ def predict():
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    # threaded=True : permet de traiter en parallèle les requêtes /predict
-    # envoyées simultanément par la comparaison multi-entreprises
-    app.run(debug=True, threaded=True)
+    app.run(debug=False)
